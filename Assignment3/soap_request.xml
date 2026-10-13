@@ -1,0 +1,23 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:pay="http://example.com/payment"
+    xmlns:sec="http://example.com/security">
+
+    <soap:Header>
+        <sec:Credentials>
+            <sec:username>hostel_pg_app</sec:username>
+            <sec:token>EXAMPLE_TOKEN_123</sec:token>
+        </sec:Credentials>
+    </soap:Header>
+
+    <soap:Body>
+        <pay:processPaymentRequest>
+            <pay:bookingId>BK501</pay:bookingId>
+            <pay:amount>5000.00</pay:amount>
+            <pay:currency>INR</pay:currency>
+        </pay:processPaymentRequest>
+    </soap:Body>
+
+</soap:Envelope>

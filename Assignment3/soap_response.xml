@@ -1,0 +1,15 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:pay="http://example.com/payment">
+
+    <soap:Body>
+        <pay:processPaymentResponse>
+            <pay:paymentId>PAY901</pay:paymentId>
+            <pay:status>SUCCESS</pay:status>
+            <pay:message>Payment completed successfully</pay:message>
+        </pay:processPaymentResponse>
+    </soap:Body>
+
+</soap:Envelope>
