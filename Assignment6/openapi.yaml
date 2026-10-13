@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: Hostel PG Tracker - Listing Service
+  version: 1.0.0
+  description: REST API for searching and managing PG listings.
+servers:
+  - url: http://localhost:5001
+paths:
+  /listings:
+    get:
+      operationId: searchPGs
+      summary: Search active PG listings
+      parameters:
+        - $ref: '#/components/parameters/Location'
+        - in: query
+          name: minRent
+          schema: {type: integer, minimum: 0}
+        - in: query
+          name: maxRent
+          schema: {type: integer, minimum: 0}
+      responses:
+        '200':
+          description: Matching listings
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ListingList'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+    post:
+      operationId: createListing
+      summary: Create listing; safe to retry with the same Idempotency-Key
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, minLength: 8, maxLength: 100}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateListing'}
+      responses:
+        '201':
+          description: Created or original result replayed
+          headers:
+            Location:
+              schema: {type: string}
+              description: URL of created listing
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Listing'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+        '502': {$ref: '#/components/responses/BadGateway'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /listings/{listingId}:
+    parameters:
+      - in: path
+        name: listingId
+        required: true
+        schema: {type: string}
+    get:
+      operationId: getListingDetails
+      summary: Get listing details
+      responses:
+        '200':
+          description: Listing details
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Listing'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      operationId: updateListing
+      summary: Update listing details
+      parameters:
+        - in: header
+          name: X-Owner-Id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateListing'}
+      responses:
+        '200':
+          description: Updated listing
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Listing'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /listings/{listingId}/status:
+    patch:
+      operationId: changeListingStatus
+      summary: Activate or deactivate a listing
+      parameters:
+        - in: path
+          name: listingId
+          required: true
+          schema: {type: string}
+        - in: header
+          name: X-Owner-Id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChangeStatus'}
+      responses:
+        '200':
+          description: Status changed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Listing'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+components:
+  parameters:
+    Location:
+      in: query
+      name: location
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 200}
+  schemas:
+    CreateListing:
+      type: object
+      required: [ownerId, title, location, monthlyRent]
+      additionalProperties: false
+      properties:
+        ownerId: {type: string, minLength: 1, maxLength: 100}
+        title: {type: string, minLength: 3, maxLength: 120}
+        location: {type: string, minLength: 2, maxLength: 200}
+        monthlyRent: {type: integer, minimum: 0}
+        description: {type: string, maxLength: 2000}
+        amenities:
+          type: array
+          items: {type: string, minLength: 1, maxLength: 80}
+    UpdateListing:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        title: {type: string, minLength: 3, maxLength: 120}
+        location: {type: string, minLength: 2, maxLength: 200}
+        monthlyRent: {type: integer, minimum: 0}
+        description: {type: string, maxLength: 2000}
+        amenities:
+          type: array
+          items: {type: string, minLength: 1, maxLength: 80}
+    ChangeStatus:
+      type: object
+      required: [status]
+      additionalProperties: false
+      properties:
+        status: {type: string, enum: [ACTIVE, INACTIVE]}
+    Listing:
+      type: object
+      required: [id, ownerId, title, location, monthlyRent, status, createdAt]
+      properties:
+        id: {type: string}
+        ownerId: {type: string}
+        title: {type: string}
+        location: {type: string}
+        monthlyRent: {type: integer}
+        description: {type: string}
+        amenities:
+          type: array
+          items: {type: string}
+        status: {type: string, enum: [ACTIVE, INACTIVE]}
+        createdAt: {type: string, format: date-time}
+    ListingList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Listing'}
+    Problem:
+      type: object
+      required: [type, title, status, detail]
+      properties:
+        type: {type: string, format: uri-reference}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    NotFound:
+      description: Listing not found
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Forbidden:
+      description: Not the listing owner
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Conflict:
+      description: Idempotency key or state conflict
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Unprocessable:
+      description: Owner is not eligible
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    BadGateway:
+      description: Invalid User Service response
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Unavailable:
+      description: User Service unavailable
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
