@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Hostel PG Tracker</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      color: #172033;
+    }
+
+    header {
+      background: #173b68;
+      color: white;
+      padding: 25px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 18px 40px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #1769aa;
+      color: white;
+      border: none;
+      border-radius: 7px;
+      padding: 11px 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #105487;
+    }
+
+    #status {
+      color: #526176;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+    }
+
+    .card,
+    form {
+      background: white;
+      border: 1px solid #dce4ef;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 4px 12px #182b4610;
+    }
+
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .rent {
+      color: #1769aa;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 12px;
+    }
+
+    .unavailable {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    form {
+      margin-top: 30px;
+      display: grid;
+      gap: 14px;
+    }
+
+    form h2 {
+      margin: 0;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .check input {
+      width: auto;
+    }
+
+    #message {
+      color: #1769aa;
+      min-height: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Hostel PG Tracker</h1>
+    <p>Find and manage PG accommodation listings.</p>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <h2>PG Listings</h2>
+      <button id="refreshBtn">Refresh Listings</button>
+    </div>
+
+    <p id="status">Loading listings...</p>
+    <section id="listings" class="grid"></section>
+
+    <form id="addForm">
+      <h2>Add a PG Listing</h2>
+
+      <label>
+        PG / Hostel Name
+        <input
+          id="name"
+          type="text"
+          required
+          placeholder="River View PG"
+        >
+      </label>
+
+      <label>
+        Location
+        <input
+          id="location"
+          type="text"
+          required
+          placeholder="Gandhinagar, Sector 5"
+        >
+      </label>
+
+      <label>
+        Monthly Rent (₹)
+        <input
+          id="rent"
+          type="number"
+          min="0"
+          step="0.01"
+          required
+          placeholder="8000"
+        >
+      </label>
+
+      <label class="check">
+        <input id="available" type="checkbox" checked>
+        Currently available
+      </label>
+
+      <button type="submit">Add Listing</button>
+      <p id="message" role="status"></p>
+    </form>
+  </main>
+
+  <script>
+    async function graphqlRequest(query, variables = {}) {
+      const response = await fetch("/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          query,
+          variables
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.errors) {
+        throw new Error(
+          result.errors
+            ? result.errors.map(e => e.message).join("; ")
+            : "Request failed"
+        );
+      }
+
+      return result.data;
+    }
+
+    async function loadListings() {
+      const status = document.getElementById("status");
+      const container = document.getElementById("listings");
+
+      status.textContent = "Loading listings...";
+
+      try {
+        const data = await graphqlRequest(`
+          query {
+            listings {
+              id
+              name
+              location
+              monthlyRent
+              available
+            }
+          }
+        `);
+
+        container.replaceChildren();
+
+        data.listings.forEach(item => {
+          const card = document.createElement("article");
+          card.className = "card";
+
+          const title = document.createElement("h3");
+          title.textContent = item.name;
+
+          const location = document.createElement("p");
+          location.textContent = item.location;
+
+          const rent = document.createElement("p");
+          rent.className = "rent";
+          rent.textContent =
+            "₹" +
+            Number(item.monthlyRent).toLocaleString("en-IN") +
+            " / month";
+
+          const badge = document.createElement("span");
+          badge.className = item.available
+            ? "pill"
+            : "pill unavailable";
+
+          badge.textContent = item.available
+            ? "Available"
+            : "Not Available";
+
+          card.append(title, location, rent, badge);
+          container.appendChild(card);
+        });
+
+        status.textContent =
+          data.listings.length + " listing(s) loaded.";
+      } catch (error) {
+        status.textContent =
+          "Could not load listings: " + error.message;
+      }
+    }
+
+    document
+      .getElementById("refreshBtn")
+      .addEventListener("click", loadListings);
+
+    document
+      .getElementById("addForm")
+      .addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const message = document.getElementById("message");
+        message.textContent = "Adding listing...";
+
+        try {
+          const input = {
+            name: document.getElementById("name").value.trim(),
+            location: document.getElementById("location").value.trim(),
+            monthlyRent: Number(
+              document.getElementById("rent").value
+            ),
+            available:
+              document.getElementById("available").checked
+          };
+
+          await graphqlRequest(
+            `
+              mutation AddListing($input: AddListingInput!) {
+                addListing(input: $input) {
+                  id
+                  name
+                  monthlyRent
+                }
+              }
+            `,
+            { input }
+          );
+
+          message.textContent = "Listing added successfully.";
+
+          event.target.reset();
+          document.getElementById("available").checked = true;
+
+          await loadListings();
+        } catch (error) {
+          message.textContent =
+            "Could not add listing: " + error.message;
+        }
+      });
+
+    loadListings();
+  </script>
+</body>
+</html>

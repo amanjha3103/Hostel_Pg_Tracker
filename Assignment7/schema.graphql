@@ -1,0 +1,23 @@
+type Listing {
+  id: ID!
+  name: String!
+  location: String!
+  monthlyRent: Float!
+  available: Boolean!
+}
+
+input AddListingInput {
+  name: String!
+  location: String!
+  monthlyRent: Float!
+  available: Boolean
+}
+
+type Query {
+  listings: [Listing!]!
+  listing(id: ID!): Listing
+}
+
+type Mutation {
+  addListing(input: AddListingInput!): Listing!
+}
