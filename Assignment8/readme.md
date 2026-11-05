@@ -1,14 +1,18 @@
 # Assignment 8 - Hostel/PG Room Availability Catalogue
 
-## Team Members
-
-- Md Kaif - 20251651055
-- Himanshu Singh - 20251651044
-- Aman Jha - 20251651016
 
 ## How to Run
+
+From the `Hostel_Pg_Tracker` folder, run:
 
 ```bash
 cd Assignment8
 npm install
 node server.js
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Demonstration Video
+
+[Watch the Assignment 8 demonstration video](https://drive.google.com/file/d/1XCNOC1ltFXuCpdRMC8XAFs4j3ZIeD1ju/view?usp=sharing)
