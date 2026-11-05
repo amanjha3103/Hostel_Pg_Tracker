@@ -1,0 +1,100 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #eef4f2;
+  color: #1d2939;
+}
+
+main {
+  width: min(90%, 900px);
+  margin: 40px auto;
+}
+
+h1 {
+  color: #16615a;
+  margin-bottom: 8px;
+}
+
+section {
+  background: white;
+  padding: 24px;
+  margin-top: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+#room-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.room-card {
+  background: #f4faf8;
+  border: 1px solid #cfe3dd;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.room-card h3 {
+  color: #16615a;
+  margin-top: 0;
+}
+
+.room-card p {
+  margin: 8px 0;
+}
+
+form {
+  display: grid;
+  gap: 15px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-weight: bold;
+}
+
+input,
+select {
+  padding: 10px;
+  border: 1px solid #b9ccc7;
+  border-radius: 7px;
+  font-size: 16px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.check input {
+  width: auto;
+}
+
+button {
+  width: fit-content;
+  background: #16615a;
+  color: white;
+  border: none;
+  padding: 11px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #104b45;
+}
+
+#message {
+  color: #16615a;
+  font-weight: bold;
+}
