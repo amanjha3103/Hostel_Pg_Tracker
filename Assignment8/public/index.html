@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hostel/PG Room Catalogue</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero">
+        <p class="eyebrow">Hostel/PG Tracker</p>
+        <h1>Room Availability Catalogue</h1>
+        <p>Browse available rooms and add a new room to the catalogue.</p>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">GET /items</p>
+            <h2>Rooms</h2>
+          </div>
+          <button id="refresh-button" type="button">Refresh list</button>
+        </div>
+        <p id="list-status" class="status" aria-live="polite">Loading rooms...</p>
+        <div id="room-list" class="room-grid"></div>
+      </section>
+
+      <section class="panel form-panel">
+        <p class="eyebrow">POST /items</p>
+        <h2>Add a room</h2>
+        <form id="room-form">
+          <div class="form-grid">
+            <label>
+              Room name
+              <input name="name" placeholder="e.g. Room E-401" required />
+            </label>
+            <label>
+              Room number
+              <input name="roomNumber" placeholder="e.g. E-401" required />
+            </label>
+            <label>
+              Sharing type
+              <select name="sharing" required>
+                <option value="">Select a type</option>
+                <option>Single Room</option>
+                <option>Double Sharing</option>
+                <option>Triple Sharing</option>
+              </select>
+            </label>
+            <label>
+              Monthly rent (INR)
+              <input name="rent" type="number" min="0" placeholder="e.g. 8500" required />
+            </label>
+          </div>
+          <label class="checkbox-label">
+            <input name="available" type="checkbox" checked />
+            Available now
+          </label>
+          <button type="submit">Add room</button>
+          <p id="form-status" class="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      const roomList = document.querySelector("#room-list");
+      const listStatus = document.querySelector("#list-status");
+      const formStatus = document.querySelector("#form-status");
+      const form = document.querySelector("#room-form");
+
+      function roomCard(room) {
+        const availability = room.available ? "Available" : "Occupied";
+        return `
+          <article class="room-card">
+            <div class="card-topline">
+              <span>Room ID: ${room.id}</span>
+              <span class="badge ${room.available ? "available" : "occupied"}">${availability}</span>
+            </div>
+            <h3>${room.name}</h3>
+            <p>${room.roomNumber} · ${room.sharing}</p>
+            <strong>₹${Number(room.rent).toLocaleString("en-IN")} / month</strong>
+          </article>`;
+      }
+
+      async function loadRooms() {
+        listStatus.textContent = "Loading rooms...";
+        roomList.innerHTML = "";
+
+        try {
+          const response = await fetch("/items");
+          if (!response.ok) throw new Error("Could not load rooms");
+          const rooms = await response.json();
+          roomList.innerHTML = rooms.map(roomCard).join("");
+          listStatus.textContent = `${rooms.length} rooms in the catalogue.`;
+        } catch (error) {
+          listStatus.textContent = "Could not load rooms. Check that the server is running.";
+        }
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        formStatus.textContent = "Saving room...";
+
+        const data = new FormData(form);
+        const payload = {
+          name: data.get("name"),
+          roomNumber: data.get("roomNumber"),
+          sharing: data.get("sharing"),
+          rent: Number(data.get("rent")),
+          available: data.get("available") === "on"
+        };
+
+        try {
+          const response = await fetch("/items", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+
+          if (!response.ok) throw new Error(result.error || "Room could not be saved");
+
+          form.reset();
+          form.elements.available.checked = true;
+          formStatus.textContent = `${result.name} was added successfully.`;
+          await loadRooms();
+        } catch (error) {
+          formStatus.textContent = `Could not save room: ${error.message}`;
+        }
+      });
+
+      document.querySelector("#refresh-button").addEventListener("click", loadRooms);
+      loadRooms();
+    </script>
+  </body>
+</html>
